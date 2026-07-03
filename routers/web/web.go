@@ -1502,6 +1502,7 @@ func registerWebRoutes(m *web.Router, webAuth *AuthMiddleware) {
 	m.Group("/{username}/{reponame}", func() {
 		if setting.DependencyChecker.Enabled {
 			m.Get("/dependencies", repo.Dependencies)
+			m.Post("/dependencies/scan-vulnerabilities", repo.DependenciesScanVulnerabilities)
 		}
 	}, optSignIn, context.RepoAssignment)
 

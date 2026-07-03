@@ -36,5 +36,13 @@ func DetectableFiles() []string {
 		"go.mod", "go.sum",
 		"Cargo.toml", "Cargo.lock",
 		"requirements.txt", "Pipfile.lock",
+		"composer.json", "composer.lock",
+		"Gemfile", "Gemfile.lock",
+		"pom.xml", "gradle.lockfile", "build.gradle", "build.gradle.kts",
+		"packages.config", "paket.lock",
+		"pubspec.yaml", "pubspec.lock",
+		"mix.exs", "mix.lock",
+		"Podfile", "Podfile.lock",
+		"environment.yml", "environment.yaml",
 	}
 }

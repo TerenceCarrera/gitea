@@ -3504,6 +3504,7 @@
   "dependencies.vulnerabilities": "Vulnerabilities",
   "dependencies.no_vulnerabilities": "None",
   "repo.dependencies.dep_type": "Type",
+  "dependencies.scan_vulnerabilities": "Scan for Vulnerabilities",
   "packages.empty": "There are no packages yet.",
   "packages.no_metadata": "No metadata.",
   "packages.empty.documentation": "For more information on the package registry, see <a target=\"_blank\" rel=\"noopener noreferrer\" href=\"%s\">the documentation</a>.",

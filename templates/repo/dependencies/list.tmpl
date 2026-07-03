@@ -8,6 +8,15 @@
 					<div class="repo-button-row-left">
 						<span class="tw-font-semibold tw-text-lg">{{ctx.Locale.Tr "dependencies.title"}}</span>
 					</div>
+					<div class="repo-button-row-right">
+						{{if $.VulnerabilityCheckEnabled}}
+							{{if $.CanWriteDependencies}}
+								<form method="post" action="{{$.RepoLink}}/dependencies/scan-vulnerabilities">
+									<button class="ui primary small button">{{ctx.Locale.Tr "dependencies.scan_vulnerabilities"}}</button>
+								</form>
+							{{end}}
+						{{end}}
+					</div>
 				</div>
 				<div class="ui divider"></div>
 				{{if .DependenciesByEcosystem}}

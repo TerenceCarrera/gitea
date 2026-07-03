@@ -21,10 +21,18 @@ import (
 const osvQueryEndpoint = "https://api.osv.dev/v1/querybatch"
 
 var ecosystemMapping = map[string]string{
-	"npm":   "npm",
-	"go":    "Go",
-	"cargo": "crates.io",
-	"pip":   "PyPI",
+	"npm":      "npm",
+	"go":       "Go",
+	"cargo":    "crates.io",
+	"pip":      "PyPI",
+	"composer": "Packagist",
+	"rubygems": "RubyGems",
+	"maven":    "Maven",
+	"nuget":    "NuGet",
+	"pub":      "Pub",
+	"mix":      "Hex",
+	"cocoapods": "CocoaPods",
+	"conda":    "PyPI",
 }
 
 // CheckResult holds vulnerability info for a single dependency

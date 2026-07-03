@@ -127,7 +127,7 @@ func scan(ctx context.Context, repoID int64) error {
 
 	// Check for known vulnerabilities if enabled
 	if setting.DependencyChecker.VulnerabilityCheck && len(allDeps) > 0 {
-		if err := checkVulnerabilities(ctx, repoID); err != nil {
+		if err := CheckVulnerabilities(ctx, repoID); err != nil {
 			log.Error("Dependency vulnerability check failed for repo %d: %v", repoID, err)
 		}
 	}
@@ -135,7 +135,7 @@ func scan(ctx context.Context, repoID int64) error {
 	return deps_model.UpsertScanStatus(ctx, repoID, headSHA)
 }
 
-func checkVulnerabilities(ctx context.Context, repoID int64) error {
+func CheckVulnerabilities(ctx context.Context, repoID int64) error {
 	deps, err := deps_model.GetDependenciesByRepo(ctx, repoID)
 	if err != nil {
 		return err
@@ -185,6 +185,22 @@ func detectEcosystem(path string) string {
 		return "cargo"
 	case "requirements.txt", "pipfile.lock":
 		return "pip"
+	case "composer.json", "composer.lock":
+		return "composer"
+	case "gemfile", "gemfile.lock":
+		return "rubygems"
+	case "pom.xml", "gradle.lockfile", "build.gradle", "build.gradle.kts":
+		return "maven"
+	case "packages.config", "paket.lock":
+		return "nuget"
+	case "pubspec.yaml", "pubspec.lock":
+		return "pub"
+	case "mix.exs", "mix.lock":
+		return "mix"
+	case "podfile", "podfile.lock":
+		return "cocoapods"
+	case "environment.yml", "environment.yaml":
+		return "conda"
 	default:
 		return "other"
 	}
