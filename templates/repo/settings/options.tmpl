@@ -502,6 +502,16 @@
 					</div>
 				</div>
 
+				{{$isDependenciesEnabled := .Repository.UnitEnabled ctx ctx.Consts.RepoUnitTypeDependencies}}
+				{{$isDependenciesGlobalDisabled := ctx.Consts.RepoUnitTypeDependencies.UnitGlobalDisabled}}
+				<div class="inline field">
+					<label>{{ctx.Locale.Tr "repo.dependencies"}}</label>
+					<div class="ui checkbox{{if $isDependenciesGlobalDisabled}} disabled{{end}}"{{if $isDependenciesGlobalDisabled}} data-tooltip-content="{{ctx.Locale.Tr "repo.unit_disabled"}}"{{end}}>
+						<input class="enable-system" name="enable_dependencies" type="checkbox"{{if $isDependenciesEnabled}} checked{{end}}>
+						<label>{{ctx.Locale.Tr "repo.settings.dependencies_desc"}}</label>
+					</div>
+				</div>
+
 				{{if not .IsMirror}}
 					<div class="divider"></div>
 					{{$pullRequestEnabled := .Repository.UnitEnabled ctx ctx.Consts.RepoUnitTypePullRequests}}

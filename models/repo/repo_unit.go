@@ -245,7 +245,7 @@ func (r *RepoUnit) BeforeSet(colName string, val xorm.Cell) {
 			r.Config = new(ActionsConfig)
 		case unit.TypeProjects:
 			r.Config = new(ProjectsConfig)
-		case unit.TypeCode, unit.TypeReleases, unit.TypeWiki, unit.TypePackages:
+		case unit.TypeCode, unit.TypeReleases, unit.TypeWiki, unit.TypePackages, unit.TypeDependencies:
 			fallthrough
 		default:
 			r.Config = new(UnitConfig)

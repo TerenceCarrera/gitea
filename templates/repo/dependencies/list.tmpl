@@ -1,0 +1,49 @@
+{{template "base/head" .}}
+<div class="page-content repository dependencies">
+	{{template "repo/header" .}}
+	<div class="ui container">
+		<div class="ui grid">
+			<div class="twelve wide column content">
+				<div class="repo-button-row">
+					<div class="repo-button-row-left">
+						<span class="tw-font-semibold tw-text-lg">{{ctx.Locale.Tr "dependencies.title"}}</span>
+					</div>
+				</div>
+				<div class="ui divider"></div>
+				{{if .DependenciesByEcosystem}}
+					{{range $ecosystem, $deps := .DependenciesByEcosystem}}
+						<h4 class="ui top attached header">
+							{{$ecosystem}}
+						</h4>
+						<div class="ui attached segment">
+							<table class="ui very basic table">
+								<thead>
+									<tr>
+										<th>{{ctx.Locale.Tr "packages.package_name"}}</th>
+										<th>{{ctx.Locale.Tr "packages.package_version"}}</th>
+										<th>{{ctx.Locale.Tr "repo.dependencies.dep_type"}}</th>
+									</tr>
+								</thead>
+								<tbody>
+									{{range $deps}}
+										<tr>
+											<td>{{.Name}}</td>
+											<td><code>{{.Version}}</code></td>
+											<td>{{.Type}}</td>
+										</tr>
+									{{end}}
+								</tbody>
+							</table>
+						</div>
+						<div class="ui bottom attached header"></div>
+					{{end}}
+				{{else}}
+					<div class="ui empty center">
+						<p>{{ctx.Locale.Tr "dependencies.empty"}}</p>
+					</div>
+				{{end}}
+			</div>
+		</div>
+	</div>
+</div>
+{{template "base/footer" .}}

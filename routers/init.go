@@ -39,6 +39,7 @@ import (
 	"code.gitea.io/gitea/services/auth/source/oauth2"
 	"code.gitea.io/gitea/services/automerge"
 	"code.gitea.io/gitea/services/cron"
+	deps "code.gitea.io/gitea/services/dependencies"
 	feed_service "code.gitea.io/gitea/services/feed"
 	indexer_service "code.gitea.io/gitea/services/indexer"
 	"code.gitea.io/gitea/services/mailer"
@@ -154,6 +155,7 @@ func InitWebInstalled(ctx context.Context) {
 
 	// Booting long running goroutines.
 	mustInit(indexer_service.Init)
+	mustInitCtx(ctx, deps.Init)
 
 	mirror_service.InitSyncMirrors()
 	mustInit(webhook.Init)

@@ -172,11 +172,17 @@
 						</a>
 					{{end}}
 
-					{{if .Permission.CanRead ctx.Consts.RepoUnitTypePackages}}
-						<a href="{{.RepoLink}}/packages" class="{{if .IsPackagesPage}}active {{end}}item">
-							{{svg "octicon-package"}} {{ctx.Locale.Tr "packages.title"}}
-						</a>
-					{{end}}
+				{{if .Permission.CanRead ctx.Consts.RepoUnitTypePackages}}
+					<a href="{{.RepoLink}}/packages" class="{{if .IsPackagesPage}}active {{end}}item">
+						{{svg "octicon-package"}} {{ctx.Locale.Tr "packages.title"}}
+					</a>
+				{{end}}
+
+				{{if .Permission.CanRead ctx.Consts.RepoUnitTypeDependencies}}
+					<a href="{{.RepoLink}}/dependencies" class="{{if .PageIsDependencies}}active {{end}}item">
+						{{svg "octicon-shield"}} {{ctx.Locale.Tr "dependencies.title"}}
+					</a>
+				{{end}}
 
 					{{$projectsUnit := .Repository.MustGetUnit ctx ctx.Consts.RepoUnitTypeProjects}}
 					{{if and (not ctx.Consts.RepoUnitTypeProjects.UnitGlobalDisabled) (.Permission.CanRead ctx.Consts.RepoUnitTypeProjects) ($projectsUnit.ProjectsConfig.IsProjectsAllowed "repo")}}

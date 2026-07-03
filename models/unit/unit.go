@@ -33,6 +33,7 @@ const (
 	TypeProjects        // 8 Projects
 	TypePackages        // 9 Packages
 	TypeActions         // 10 Actions
+	TypeDependencies    // 11 Dependencies
 
 	// FIXME: TEAM-UNIT-PERMISSION: the team unit "admin" permission's design is not right, when a new unit is added in the future,
 	// admin team won't inherit the correct admin permission for the new unit, need to have a complete fix before adding any new unit.
@@ -65,6 +66,7 @@ var (
 		TypeProjects,
 		TypePackages,
 		TypeActions,
+		TypeDependencies,
 	}
 
 	// DefaultRepoUnits contains the default unit types
@@ -77,12 +79,14 @@ var (
 		TypeProjects,
 		TypePackages,
 		TypeActions,
+		TypeDependencies,
 	}
 
 	// ForkRepoUnits contains the default unit types for forks
 	DefaultForkRepoUnits = []Type{
 		TypeCode,
 		TypePullRequests,
+		TypeDependencies,
 	}
 
 	// DefaultMirrorRepoUnits contains the default unit types for mirrors
@@ -93,6 +97,7 @@ var (
 		TypeWiki,
 		TypeProjects,
 		TypePackages,
+		TypeDependencies,
 	}
 
 	// DefaultTemplateRepoUnits contains the default unit types for templates
@@ -104,6 +109,7 @@ var (
 		TypeWiki,
 		TypeProjects,
 		TypePackages,
+		TypeDependencies,
 	}
 
 	// NotAllowedDefaultRepoUnits contains units that can't be default
@@ -328,6 +334,15 @@ var (
 		perm.AccessModeOwner,
 	}
 
+	UnitDependencies = Unit{
+		TypeDependencies,
+		"repo.dependencies",
+		"/dependencies",
+		"repo.dependencies.desc",
+		11,
+		perm.AccessModeRead,
+	}
+
 	// Units contains all the units
 	Units = map[Type]Unit{
 		TypeCode:            UnitCode,
@@ -340,6 +355,7 @@ var (
 		TypeProjects:        UnitProjects,
 		TypePackages:        UnitPackages,
 		TypeActions:         UnitActions,
+		TypeDependencies:    UnitDependencies,
 	}
 )
 
