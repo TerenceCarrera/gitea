@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"gitea.dev/modules/json"
-	"gitea.dev/modules/log"
-	"gitea.dev/modules/proxy"
-	"gitea.dev/modules/setting"
+	"code.gitea.io/gitea/modules/json"
+	"code.gitea.io/gitea/modules/log"
+	"code.gitea.io/gitea/modules/proxy"
+	"code.gitea.io/gitea/modules/setting"
 )
 
 const osvQueryEndpoint = "https://api.osv.dev/v1/querybatch"

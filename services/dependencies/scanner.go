@@ -8,14 +8,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	deps_model "gitea.dev/models/dependencies"
-	repo_model "gitea.dev/models/repo"
-	unit_model "gitea.dev/models/unit"
-	"gitea.dev/modules/dependency/checker"
-	"gitea.dev/modules/dependency/parser"
-	"gitea.dev/modules/gitrepo"
-	"gitea.dev/modules/log"
-	"gitea.dev/modules/setting"
+	deps_model "code.gitea.io/gitea/models/dependencies"
+	repo_model "code.gitea.io/gitea/models/repo"
+	unit_model "code.gitea.io/gitea/models/unit"
+	"code.gitea.io/gitea/modules/dependency/checker"
+	"code.gitea.io/gitea/modules/dependency/parser"
+	"code.gitea.io/gitea/modules/gitrepo"
+	"code.gitea.io/gitea/modules/log"
+	"code.gitea.io/gitea/modules/setting"
 )
 
 func scan(ctx context.Context, repoID int64) error {

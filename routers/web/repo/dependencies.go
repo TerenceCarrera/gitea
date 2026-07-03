@@ -6,13 +6,13 @@ package repo
 import (
 	"net/http"
 
-	deps_model "gitea.dev/models/dependencies"
-	unit_model "gitea.dev/models/unit"
-	dep_service "gitea.dev/services/dependencies"
-	"gitea.dev/modules/log"
-	"gitea.dev/modules/setting"
-	"gitea.dev/modules/templates"
-	"gitea.dev/services/context"
+	deps_model "code.gitea.io/gitea/models/dependencies"
+	unit_model "code.gitea.io/gitea/models/unit"
+	dep_service "code.gitea.io/gitea/services/dependencies"
+	"code.gitea.io/gitea/modules/log"
+	"code.gitea.io/gitea/modules/setting"
+	"code.gitea.io/gitea/modules/templates"
+	"code.gitea.io/gitea/services/context"
 )
 
 const (

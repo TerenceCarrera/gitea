@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	"gitea.dev/models/db"
-	"gitea.dev/modules/timeutil"
+	"code.gitea.io/gitea/models/db"
+	"code.gitea.io/gitea/modules/timeutil"
 )
 
 // ScanStatus tracks the last scan state for a repository

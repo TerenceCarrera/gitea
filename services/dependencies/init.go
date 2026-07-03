@@ -7,14 +7,14 @@ import (
 	"context"
 	"runtime/pprof"
 
-	"gitea.dev/models/db"
-	repo_model "gitea.dev/models/repo"
-	"gitea.dev/modules/graceful"
-	"gitea.dev/modules/log"
-	"gitea.dev/modules/process"
-	"gitea.dev/modules/queue"
-	"gitea.dev/modules/setting"
-	notify_service "gitea.dev/services/notify"
+	"code.gitea.io/gitea/models/db"
+	repo_model "code.gitea.io/gitea/models/repo"
+	"code.gitea.io/gitea/modules/graceful"
+	"code.gitea.io/gitea/modules/log"
+	"code.gitea.io/gitea/modules/process"
+	"code.gitea.io/gitea/modules/queue"
+	"code.gitea.io/gitea/modules/setting"
+	notify_service "code.gitea.io/gitea/services/notify"
 )
 
 var scanQueue *queue.WorkerPoolQueue[*ScanTask]
