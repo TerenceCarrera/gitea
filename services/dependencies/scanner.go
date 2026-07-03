@@ -8,9 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	repo_model "gitea.dev/models/repo"
 	deps_model "gitea.dev/models/dependencies"
+	repo_model "gitea.dev/models/repo"
 	unit_model "gitea.dev/models/unit"
+	"gitea.dev/modules/dependency/checker"
 	"gitea.dev/modules/dependency/parser"
 	"gitea.dev/modules/gitrepo"
 	"gitea.dev/modules/log"
@@ -124,7 +125,53 @@ func scan(ctx context.Context, repoID int64) error {
 		}
 	}
 
+	// Check for known vulnerabilities if enabled
+	if setting.DependencyChecker.VulnerabilityCheck && len(allDeps) > 0 {
+		if err := checkVulnerabilities(ctx, repoID); err != nil {
+			log.Error("Dependency vulnerability check failed for repo %d: %v", repoID, err)
+		}
+	}
+
 	return deps_model.UpsertScanStatus(ctx, repoID, headSHA)
+}
+
+func checkVulnerabilities(ctx context.Context, repoID int64) error {
+	deps, err := deps_model.GetDependenciesByRepo(ctx, repoID)
+	if err != nil {
+		return err
+	}
+
+	var inputs []checker.CheckInput
+	for _, dep := range deps {
+		inputs = append(inputs, checker.CheckInput{
+			Name:         dep.Name,
+			Version:      dep.Version,
+			Ecosystem:    dep.Ecosystem,
+			DependencyID: dep.ID,
+		})
+	}
+
+	results := checker.CheckVulnerabilities(ctx, inputs)
+	if len(results) == 0 {
+		return nil
+	}
+
+	var vulns []deps_model.Vulnerability
+	for _, result := range results {
+		for _, v := range result.Vulnerabilities {
+			vulns = append(vulns, deps_model.Vulnerability{
+				RepoID:       repoID,
+				DependencyID: result.DependencyID,
+				SourceID:     v.SourceID,
+				SourceURL:    v.SourceURL,
+				Severity:     v.Severity,
+				Title:        v.Title,
+				FixedVersion: v.FixedVersion,
+			})
+		}
+	}
+
+	return deps_model.UpsertVulnerabilities(ctx, repoID, vulns)
 }
 
 func detectEcosystem(path string) string {

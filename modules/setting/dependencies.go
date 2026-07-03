@@ -5,11 +5,14 @@ package setting
 
 // DependencyChecker settings
 var DependencyChecker = struct {
-	Enabled bool
+	Enabled            bool
+	VulnerabilityCheck bool
 }{
-	Enabled: false,
+	Enabled:            false,
+	VulnerabilityCheck: false,
 }
 
 func loadDependenciesFrom(rootCfg ConfigProvider) {
 	DependencyChecker.Enabled = rootCfg.Section("dependency_checker").Key("ENABLED").MustBool(false)
+	DependencyChecker.VulnerabilityCheck = rootCfg.Section("dependency_checker").Key("VULNERABILITY_CHECK").MustBool(false)
 }

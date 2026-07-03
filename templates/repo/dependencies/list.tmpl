@@ -19,9 +19,12 @@
 							<table class="ui very basic table">
 								<thead>
 									<tr>
-										<th>{{ctx.Locale.Tr "packages.package_name"}}</th>
-										<th>{{ctx.Locale.Tr "packages.package_version"}}</th>
+										<th>{{ctx.Locale.Tr "repo.dependencies.package_name"}}</th>
+										<th>{{ctx.Locale.Tr "repo.dependencies.package_version"}}</th>
 										<th>{{ctx.Locale.Tr "repo.dependencies.dep_type"}}</th>
+										{{if $.VulnerabilityCheckEnabled}}
+											<th>{{ctx.Locale.Tr "dependencies.vulnerabilities"}}</th>
+										{{end}}
 									</tr>
 								</thead>
 								<tbody>
@@ -30,6 +33,30 @@
 											<td>{{.Name}}</td>
 											<td><code>{{.Version}}</code></td>
 											<td>{{.Type}}</td>
+											{{if $.VulnerabilityCheckEnabled}}
+												<td>
+													{{$vulns := index $.VulnerabilitiesByDep .Name}}
+													{{if $vulns}}
+														{{range $vuln := $vulns}}
+															{{$severityClass := "grey"}}
+															{{if eq $vuln.Severity "CRITICAL"}}{{$severityClass = "red"}}
+															{{else if eq $vuln.Severity "HIGH"}}{{$severityClass = "orange"}}
+															{{else if eq $vuln.Severity "MEDIUM"}}{{$severityClass = "yellow"}}
+															{{else if eq $vuln.Severity "LOW"}}{{$severityClass = "green"}}
+															{{end}}
+															{{if $vuln.SourceURL}}
+																<a href="{{$vuln.SourceURL}}" target="_blank" rel="noopener noreferrer" class="ui label {{$severityClass}}" data-tooltip-content="{{$vuln.Title}}">
+																	{{$vuln.SourceID}}
+																</a>
+															{{else}}
+																<span class="ui label {{$severityClass}}" data-tooltip-content="{{$vuln.Title}}">{{$vuln.SourceID}}</span>
+															{{end}}
+														{{end}}
+													{{else}}
+														<span class="ui green label">{{ctx.Locale.Tr "dependencies.no_vulnerabilities"}}</span>
+													{{end}}
+												</td>
+											{{end}}
 										</tr>
 									{{end}}
 								</tbody>

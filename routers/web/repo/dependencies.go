@@ -5,6 +5,7 @@ package repo
 
 import (
 	deps_model "gitea.dev/models/dependencies"
+	"gitea.dev/modules/setting"
 	"gitea.dev/modules/templates"
 	"gitea.dev/services/context"
 )
@@ -24,5 +25,16 @@ func Dependencies(ctx *context.Context) {
 	}
 
 	ctx.Data["DependenciesByEcosystem"] = deps
+
+	if setting.DependencyChecker.VulnerabilityCheck {
+		vulnsByDep, err := deps_model.GetVulnerabilitiesByRepoGrouped(ctx, ctx.Repo.Repository.ID)
+		if err != nil {
+			ctx.ServerError("GetVulnerabilitiesByRepoGrouped", err)
+			return
+		}
+		ctx.Data["VulnerabilitiesByDep"] = vulnsByDep
+	}
+
+	ctx.Data["VulnerabilityCheckEnabled"] = setting.DependencyChecker.VulnerabilityCheck
 	ctx.HTML(200, tplDependencies)
 }
