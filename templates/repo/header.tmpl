@@ -133,8 +133,14 @@
 		<overflow-menu class="ui secondary pointing menu">
 			{{if not (or .Repository.IsBeingCreated .Repository.IsBroken)}}
 				<div class="overflow-menu-items">
+					{{if and .Repository.EnableDashboard (.Permission.CanReadAny ctx.Consts.RepoUnitTypePullRequests ctx.Consts.RepoUnitTypeIssues ctx.Consts.RepoUnitTypeReleases ctx.Consts.RepoUnitTypeCode) (not .IsEmptyRepo)}}
+						<a class="{{if .PageIsDashboard}}active {{end}}item" href="{{.RepoLink}}/dashboard">
+							{{svg "octicon-graph"}} {{ctx.Locale.Tr "repo.dashboard"}}
+						</a>
+					{{end}}
+
 					{{if .Permission.CanRead ctx.Consts.RepoUnitTypeCode}}
-					<a class="{{if .PageIsViewCode}}active {{end}}item" href="{{.RepoLink}}{{if and (ne .BranchName .Repository.DefaultBranch) (not $.PageIsWiki)}}/src/{{.RefTypeNameSubURL}}{{end}}">
+					<a class="{{if .PageIsViewCode}}active {{end}}item" href="{{.RepoLink}}/code">
 						{{svg "octicon-code"}} {{ctx.Locale.Tr "repo.code"}}
 					</a>
 					{{end}}

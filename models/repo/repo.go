@@ -208,6 +208,7 @@ type Repository struct {
 	StatsIndexerStatus              *RepoIndexerStatus `xorm:"-"`
 	IsFsckEnabled                   bool               `xorm:"NOT NULL DEFAULT true"`
 	CloseIssuesViaCommitInAnyBranch bool               `xorm:"NOT NULL DEFAULT false"`
+	EnableDashboard                 bool               `xorm:"NOT NULL DEFAULT true"`
 	Topics                          []string           `xorm:"TEXT JSON"`
 	ObjectFormatName                string             `xorm:"VARCHAR(6) NOT NULL DEFAULT 'sha1'"`
 

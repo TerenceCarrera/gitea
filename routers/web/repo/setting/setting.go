@@ -524,6 +524,11 @@ func handleSettingsPostAdvanced(ctx *context.Context) {
 		repoChanged = true
 	}
 
+	if repo.EnableDashboard != form.EnableDashboard {
+		repo.EnableDashboard = form.EnableDashboard
+		repoChanged = true
+	}
+
 	if form.EnableCode && !unit_model.TypeCode.UnitGlobalDisabled() {
 		units = append(units, newRepoUnit(repo, unit_model.TypeCode, nil))
 	} else if !unit_model.TypeCode.UnitGlobalDisabled() {

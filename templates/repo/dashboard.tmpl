@@ -1,0 +1,178 @@
+{{template "base/head" .}}
+<div role="main" aria-label="{{.Title}}" class="page-content repository commits">
+	{{template "repo/header" .}}
+	<div class="ui container">
+		<h2 class="ui header">
+			{{ctx.Locale.Tr "repo.dashboard"}}
+		</h2>
+
+		{{/* Overview Stats */}}
+		{{if (or (.Permission.CanRead ctx.Consts.RepoUnitTypeIssues) (.Permission.CanRead ctx.Consts.RepoUnitTypePullRequests))}}
+		<h4 class="ui top attached header">{{ctx.Locale.Tr "repo.dashboard.overview"}}</h4>
+		<div class="ui attached segment">
+			<div class="ui four column grid">
+				{{if .Permission.CanRead ctx.Consts.RepoUnitTypePullRequests}}
+				<div class="column text center">
+					<div class="tw-text-purple">{{svg "octicon-git-pull-request" 24}}</div>
+					<div class="tw-text-24 tw-font-bold">{{.Activity.MergedPRCount}}</div>
+					<div class="tw-text-small">{{ctx.Locale.Tr "repo.dashboard.merged_prs"}}</div>
+				</div>
+				<div class="column text center">
+					<div class="tw-text-green">{{svg "octicon-git-branch" 24}}</div>
+					<div class="tw-text-24 tw-font-bold">{{.Activity.OpenedPRCount}}</div>
+					<div class="tw-text-small">{{ctx.Locale.Tr "repo.dashboard.opened_prs"}}</div>
+				</div>
+				{{end}}
+				{{if .Permission.CanRead ctx.Consts.RepoUnitTypeIssues}}
+				<div class="column text center">
+					<div class="tw-text-red">{{svg "octicon-issue-closed" 24}}</div>
+					<div class="tw-text-24 tw-font-bold">{{.Activity.ClosedIssueCount}}</div>
+					<div class="tw-text-small">{{ctx.Locale.Tr "repo.dashboard.closed_issues"}}</div>
+				</div>
+				<div class="column text center">
+					<div class="tw-text-green">{{svg "octicon-issue-opened" 24}}</div>
+					<div class="tw-text-24 tw-font-bold">{{.Activity.OpenedIssueCount}}</div>
+					<div class="tw-text-small">{{ctx.Locale.Tr "repo.dashboard.opened_issues"}}</div>
+				</div>
+				{{end}}
+			</div>
+		</div>
+		{{end}}
+
+		{{/* Git Stats */}}
+		{{if .Permission.CanRead ctx.Consts.RepoUnitTypeCode}}
+		{{if gt .Activity.Code.CommitCountInAllBranches 0}}
+		<h4 class="ui top attached header">{{ctx.Locale.Tr "repo.dashboard.git_activity"}}</h4>
+		<div class="ui attached segment">
+			<div class="ui four column grid">
+				<div class="column text center">
+					<div class="tw-text-24 tw-font-bold">{{.Activity.Code.CommitCount}}</div>
+					<div class="tw-text-small">{{ctx.Locale.Tr "repo.dashboard.commits"}}</div>
+				</div>
+				<div class="column text center">
+					<div class="tw-text-green tw-text-24 tw-font-bold">+{{.Activity.Code.Additions}}</div>
+					<div class="tw-text-small">{{ctx.Locale.Tr "repo.dashboard.additions"}}</div>
+				</div>
+				<div class="column text center">
+					<div class="tw-text-red tw-text-24 tw-font-bold">-{{.Activity.Code.Deletions}}</div>
+					<div class="tw-text-small">{{ctx.Locale.Tr "repo.dashboard.deletions"}}</div>
+				</div>
+				<div class="column text center">
+					<div class="tw-text-24 tw-font-bold">{{.Activity.Code.ChangedFiles}}</div>
+					<div class="tw-text-small">{{ctx.Locale.Tr "repo.dashboard.files_changed"}}</div>
+				</div>
+			</div>
+		</div>
+		{{end}}
+		{{end}}
+
+		{{/* Top Authors */}}
+		{{if .Permission.CanRead ctx.Consts.RepoUnitTypeCode}}
+		{{if gt .Activity.Code.CommitCountInAllBranches 0}}
+		<h4 class="ui top attached header">{{ctx.Locale.Tr "repo.dashboard.top_contributors"}}</h4>
+		<div class="ui attached segment">
+			<div id="repo-activity-top-authors-chart"></div>
+		</div>
+		{{end}}
+		{{end}}
+
+		{{/* Recent Releases */}}
+		{{if gt .Activity.PublishedReleaseCount 0}}
+		<h4 class="ui top attached header">
+			{{svg "octicon-tag" 16 "tw-mr-2"}}
+			{{ctx.Locale.Tr "repo.dashboard.recent_releases"}}
+		</h4>
+		<div class="ui attached segment">
+			<div class="ui list">
+				{{range .Activity.PublishedReleases}}
+				<div class="item">
+					<span class="ui green label">{{ctx.Locale.Tr "repo.activity.published_release_label"}}</span>
+					{{.TagName}}
+					{{if not .IsTag}}
+					<a href="{{$.RepoLink}}/src/{{.TagName | PathEscapeSegments}}">{{.Title | ctx.RenderUtils.RenderIssueSimpleTitle}}</a>
+					{{end}}
+					<span class="tw-text-small tw-text-text-light-2">{{DateUtils.TimeSince .CreatedUnix}}</span>
+				</div>
+				{{end}}
+			</div>
+		</div>
+		{{end}}
+
+		{{/* Recent Merged PRs */}}
+		{{if gt .Activity.MergedPRCount 0}}
+		<h4 class="ui top attached header">
+			{{svg "octicon-git-pull-request" 16 "tw-mr-2"}}
+			{{ctx.Locale.Tr "repo.dashboard.recent_merged_prs"}}
+		</h4>
+		<div class="ui attached segment">
+			<div class="ui list">
+				{{range .Activity.MergedPRs}}
+				<div class="item">
+					<span class="ui purple label">{{ctx.Locale.Tr "repo.activity.merged_prs_label"}}</span>
+					#{{.Index}} <a href="{{$.RepoLink}}/pulls/{{.Index}}">{{.Issue.Title | ctx.RenderUtils.RenderIssueSimpleTitle}}</a>
+					<span class="tw-text-small tw-text-text-light-2">{{DateUtils.TimeSince .MergedUnix}}</span>
+				</div>
+				{{end}}
+			</div>
+		</div>
+		{{end}}
+
+		{{/* Recent Opened PRs */}}
+		{{if gt .Activity.OpenedPRCount 0}}
+		<h4 class="ui top attached header">
+			{{svg "octicon-git-branch" 16 "tw-mr-2"}}
+			{{ctx.Locale.Tr "repo.dashboard.recent_opened_prs"}}
+		</h4>
+		<div class="ui attached segment">
+			<div class="ui list">
+				{{range .Activity.OpenedPRs}}
+				<div class="item">
+					<span class="ui green label">{{ctx.Locale.Tr "repo.activity.opened_prs_label"}}</span>
+					#{{.Index}} <a href="{{$.RepoLink}}/pulls/{{.Index}}">{{.Issue.Title | ctx.RenderUtils.RenderIssueSimpleTitle}}</a>
+					<span class="tw-text-small tw-text-text-light-2">{{DateUtils.TimeSince .Issue.CreatedUnix}}</span>
+				</div>
+				{{end}}
+			</div>
+		</div>
+		{{end}}
+
+		{{/* Recent Closed Issues */}}
+		{{if gt .Activity.ClosedIssueCount 0}}
+		<h4 class="ui top attached header">
+			{{svg "octicon-issue-closed" 16 "tw-mr-2"}}
+			{{ctx.Locale.Tr "repo.dashboard.recent_closed_issues"}}
+		</h4>
+		<div class="ui attached segment">
+			<div class="ui list">
+				{{range .Activity.ClosedIssues}}
+				<div class="item">
+					<span class="ui red label">{{ctx.Locale.Tr "repo.activity.closed_issue_label"}}</span>
+					#{{.Index}} <a href="{{$.RepoLink}}/issues/{{.Index}}">{{.Title | ctx.RenderUtils.RenderIssueSimpleTitle}}</a>
+					<span class="tw-text-small tw-text-text-light-2">{{DateUtils.TimeSince .ClosedUnix}}</span>
+				</div>
+				{{end}}
+			</div>
+		</div>
+		{{end}}
+
+		{{/* Recent Opened Issues */}}
+		{{if gt .Activity.OpenedIssueCount 0}}
+		<h4 class="ui top attached header">
+			{{svg "octicon-issue-opened" 16 "tw-mr-2"}}
+			{{ctx.Locale.Tr "repo.dashboard.recent_opened_issues"}}
+		</h4>
+		<div class="ui attached segment">
+			<div class="ui list">
+				{{range .Activity.OpenedIssues}}
+				<div class="item">
+					<span class="ui green label">{{ctx.Locale.Tr "repo.activity.new_issue_label"}}</span>
+					#{{.Index}} <a href="{{$.RepoLink}}/issues/{{.Index}}">{{.Title | ctx.RenderUtils.RenderIssueSimpleTitle}}</a>
+					<span class="tw-text-small tw-text-text-light-2">{{DateUtils.TimeSince .CreatedUnix}}</span>
+				</div>
+				{{end}}
+			</div>
+		</div>
+		{{end}}
+	</div>
+</div>
+{{template "base/footer" .}}

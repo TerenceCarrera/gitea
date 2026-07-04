@@ -21,18 +21,19 @@
 				<div class="ui divider"></div>
 				{{if .DependenciesByEcosystem}}
 					{{range $ecosystem, $deps := .DependenciesByEcosystem}}
-						<h4 class="ui top attached header">
-							{{$ecosystem}}
-						</h4>
-						<div class="ui attached segment">
+						<div class="tw-mb-8">
+							<h4 class="ui top attached header">
+								{{$ecosystem}}
+							</h4>
+							<div class="ui attached segment">
 							<table class="ui very basic table">
 								<thead>
 									<tr>
-										<th>{{ctx.Locale.Tr "repo.dependencies.package_name"}}</th>
-										<th>{{ctx.Locale.Tr "repo.dependencies.package_version"}}</th>
-										<th>{{ctx.Locale.Tr "repo.dependencies.dep_type"}}</th>
+										<th style="width:30%">{{ctx.Locale.Tr "repo.dependencies.package_name"}}</th>
+										<th style="width:15%">{{ctx.Locale.Tr "repo.dependencies.package_version"}}</th>
+										<th style="width:10%">{{ctx.Locale.Tr "repo.dependencies.dep_type"}}</th>
 										{{if $.VulnerabilityCheckEnabled}}
-											<th>{{ctx.Locale.Tr "dependencies.vulnerabilities"}}</th>
+											<th style="width:45%">{{ctx.Locale.Tr "dependencies.vulnerabilities"}}</th>
 										{{end}}
 									</tr>
 								</thead>
@@ -72,6 +73,7 @@
 							</table>
 						</div>
 						<div class="ui bottom attached header"></div>
+						</div>
 					{{end}}
 				{{else}}
 					<div class="ui empty center">

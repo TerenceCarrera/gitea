@@ -26,7 +26,7 @@ import (
 
 // these flags will be set by the build flags
 var (
-	Version = "development" // program version for this build
+	Version = "1.26.5 (WizGITters)" // program version for this build
 	Tags    = ""            // the Golang build tags
 )
 

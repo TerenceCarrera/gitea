@@ -1250,7 +1250,8 @@ func registerWebRoutes(m *web.Router, webAuth *AuthMiddleware) {
 	// end "/{username}/{reponame}/settings"
 
 	// user/org home, including rss feeds like "/{username}/{reponame}.rss"
-	m.Get("/{username}/{reponame}", optSignIn, webAuth.AllowBasic, context.RepoAssignment, context.RepoRefByType(git.RefTypeBranch), repo.SetEditorconfigIfExists, repo.Home)
+	m.Get("/{username}/{reponame}", optSignIn, webAuth.AllowBasic, context.RepoAssignment, context.RepoRefByType(git.RefTypeBranch), repo.SetEditorconfigIfExists, repo.Dashboard)
+	m.Get("/{username}/{reponame}/code", optSignIn, webAuth.AllowBasic, context.RepoAssignment, context.RepoRefByType(git.RefTypeBranch), repo.SetEditorconfigIfExists, repo.Home)
 
 	m.Post("/{username}/{reponame}/markup", optSignIn, context.RepoAssignment, reqUnitsWithMarkdown, web.Bind(structs.MarkupOption{}), misc.Markup)
 
@@ -1608,6 +1609,13 @@ func registerWebRoutes(m *web.Router, webAuth *AuthMiddleware) {
 		context.RequireUnitReader(unit.TypeCode, unit.TypeIssues, unit.TypePullRequests, unit.TypeReleases),
 	)
 	// end "/{username}/{reponame}/activity"
+
+	m.Group("/{username}/{reponame}", func() {
+		m.Get("/dashboard", repo.Dashboard)
+	},
+		optSignIn, context.RepoAssignment, repo.MustBeNotEmpty,
+		context.RequireUnitReader(unit.TypeCode, unit.TypeIssues, unit.TypePullRequests, unit.TypeReleases),
+	)
 
 	m.Group("/{username}/{reponame}", func() {
 		m.Get("/{type:pulls}", repo.Issues)
