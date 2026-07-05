@@ -1,19 +1,19 @@
 # syntax=docker/dockerfile:1
-FROM --platform=$BUILDPLATFORM docker.io/library/golang:1.26-alpine3.23 AS frontend-build
-RUN apk --no-cache add build-base git nodejs pnpm
+FROM --platform=$BUILDPLATFORM docker.io/library/node:22-bookworm AS frontend-build
+RUN apt-get update && apt-get install -y build-essential git && npm install -g pnpm
 WORKDIR /src
 COPY package.json pnpm-lock.yaml .npmrc ./
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
 COPY --exclude=.git/ . .
 RUN make frontend
 
-FROM docker.io/library/golang:1.26-alpine3.23 AS build-env
+FROM docker.io/library/golang:1.26-bookworm AS build-env
 
 ARG GITEA_VERSION
 ARG TAGS="sqlite sqlite_unlock_notify"
 ENV TAGS="bindata timetzdata $TAGS"
 
-RUN apk --no-cache add build-base git musl-dev
+RUN apt-get update && apt-get install -y build-essential git
 
 WORKDIR ${GOPATH}/src/code.gitea.io/gitea
 COPY go.mod go.sum ./
@@ -23,7 +23,7 @@ COPY --from=frontend-build /src/public/assets public/assets
 
 RUN --mount=type=cache,target="/root/.cache/go-build" \
     --mount=type=bind,source=".git/",target=".git/" \
-    STATIC=1 make backend
+    make backend
 
-FROM docker.io/library/alpine:3.23 AS gitea
+FROM docker.io/library/debian:bookworm AS gitea
 COPY --from=build-env /go/src/code.gitea.io/gitea/gitea /app/gitea/gitea
