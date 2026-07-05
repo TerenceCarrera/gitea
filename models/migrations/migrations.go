@@ -405,6 +405,9 @@ func prepareMigrationTasks() []*migration {
 		newMigration(328, "Add TokenPermissions column to ActionRunJob", v1_26.AddTokenPermissionsToActionRunJob),
 		newMigration(329, "Add unique constraint for user badge", v1_26.AddUniqueIndexForUserBadge),
 		newMigration(330, "Add name column to webhook", v1_26.AddNameToWebhook),
+		// Gitea 1.26.0 ends at migration ID number 330 (database version 331)
+
+		newMigration(331, "Add IssueID column to vulnerability", v1_26.AddIssueIDToVulnerability),
 	}
 	return preparedMigrations
 }

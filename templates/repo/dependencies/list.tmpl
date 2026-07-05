@@ -29,25 +29,43 @@
 							<table class="ui very basic table">
 								<thead>
 									<tr>
-										<th style="width:30%">{{ctx.Locale.Tr "repo.dependencies.package_name"}}</th>
-										<th style="width:15%">{{ctx.Locale.Tr "repo.dependencies.package_version"}}</th>
-										<th style="width:10%">{{ctx.Locale.Tr "repo.dependencies.dep_type"}}</th>
+										<th style="width:25%">{{ctx.Locale.Tr "repo.dependencies.package_name"}}</th>
+										<th style="width:12%">{{ctx.Locale.Tr "repo.dependencies.package_version"}}</th>
+										<th style="width:8%">{{ctx.Locale.Tr "repo.dependencies.dep_type"}}</th>
 										{{if $.VulnerabilityCheckEnabled}}
-											<th style="width:45%">{{ctx.Locale.Tr "dependencies.vulnerabilities"}}</th>
+											<th style="width:8%">{{ctx.Locale.Tr "dependencies.severity"}}</th>
+											<th style="width:35%">{{ctx.Locale.Tr "dependencies.vulnerabilities"}}</th>
+											<th style="width:12%">{{ctx.Locale.Tr "dependencies.action"}}</th>
 										{{end}}
 									</tr>
 								</thead>
 								<tbody>
 									{{range $deps}}
 										<tr>
+											{{$vulns := index $.VulnerabilitiesByDep .Name}}
 											<td>{{.Name}}</td>
 											<td><code>{{.Version}}</code></td>
 											<td>{{.Type}}</td>
 											{{if $.VulnerabilityCheckEnabled}}
 												<td>
-													{{$vulns := index $.VulnerabilitiesByDep .Name}}
 													{{if $vulns}}
 														{{range $vuln := $vulns}}
+															<div class="tw-py-1">
+															{{$severityClass := "grey"}}
+															{{if eq $vuln.Severity "CRITICAL"}}{{$severityClass = "red"}}
+															{{else if eq $vuln.Severity "HIGH"}}{{$severityClass = "orange"}}
+															{{else if eq $vuln.Severity "MEDIUM"}}{{$severityClass = "yellow"}}
+															{{else if eq $vuln.Severity "LOW"}}{{$severityClass = "green"}}
+															{{end}}
+															<span class="ui label {{$severityClass}}">{{$vuln.Severity}}</span>
+															</div>
+														{{end}}
+													{{end}}
+												</td>
+												<td>
+													{{if $vulns}}
+														{{range $vuln := $vulns}}
+															<div class="tw-py-1">
 															{{$severityClass := "grey"}}
 															{{if eq $vuln.Severity "CRITICAL"}}{{$severityClass = "red"}}
 															{{else if eq $vuln.Severity "HIGH"}}{{$severityClass = "orange"}}
@@ -61,9 +79,27 @@
 															{{else}}
 																<span class="ui label {{$severityClass}}" data-tooltip-content="{{$vuln.Title}}">{{$vuln.SourceID}}</span>
 															{{end}}
+															</div>
 														{{end}}
 													{{else}}
 														<span class="ui green label">{{ctx.Locale.Tr "dependencies.no_vulnerabilities"}}</span>
+													{{end}}
+												</td>
+												<td>
+													{{if $vulns}}
+														{{$depName := .Name}}
+														{{range $vuln := $vulns}}
+															<div class="tw-py-1">
+															{{if $vuln.IssueID}}
+																<a href="{{$.RepoLink}}/issues/{{$vuln.IssueID}}">#{{$vuln.IssueID}}</a>
+															{{else if $.CanWriteDependencies}}
+																<form method="post" action="{{$.RepoLink}}/dependencies/create-issue" class="tw-inline">
+																	<input type="hidden" name="vuln_id" value="{{$vuln.ID}}">
+																	<button type="submit" class="ui mini basic button" data-tooltip-content="{{ctx.Locale.Tr "dependencies.create_issue"}}">{{ctx.Locale.Tr "dependencies.create_issue"}}</button>
+																</form>
+															{{end}}
+															</div>
+														{{end}}
 													{{end}}
 												</td>
 											{{end}}

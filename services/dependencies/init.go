@@ -42,7 +42,7 @@ func Init(ctx context.Context) error {
 
 	handler := func(items ...*ScanTask) (unhandled []*ScanTask) {
 		for _, task := range items {
-			if err := scan(ctx, task.RepoID); err != nil {
+			if err := ScanRepository(ctx, task.RepoID); err != nil {
 				log.Error("Dependency scanner: error scanning repo %d: %v", task.RepoID, err)
 			}
 		}

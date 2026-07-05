@@ -85,6 +85,19 @@ func GetDependenciesByRepoGrouped(ctx context.Context, repoID int64) (map[string
 	return result, nil
 }
 
+// GetDependencyByID returns a single dependency by its primary key
+func GetDependencyByID(ctx context.Context, id int64) (*Dependency, error) {
+	var d Dependency
+	has, err := db.GetEngine(ctx).Where("id = ?", id).Get(&d)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, ErrDependencyNotExists{ID: id}
+	}
+	return &d, nil
+}
+
 // DeleteDependenciesByRepo removes all dependencies for a repo
 func DeleteDependenciesByRepo(ctx context.Context, repoID int64) error {
 	_, err := db.GetEngine(ctx).Where("repo_id = ?", repoID).Delete(&Dependency{})

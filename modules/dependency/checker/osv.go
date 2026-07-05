@@ -18,7 +18,10 @@ import (
 	"code.gitea.io/gitea/modules/setting"
 )
 
-const osvQueryEndpoint = "https://api.osv.dev/v1/querybatch"
+const (
+	osvQueryBatchEndpoint = "https://api.osv.dev/v1/querybatch"
+	osvVulnEndpoint       = "https://api.osv.dev/v1/vulns/"
+)
 
 var ecosystemMapping = map[string]string{
 	"npm":      "npm",
@@ -75,21 +78,27 @@ type osvQueryBatchResponse struct {
 	Results []osvQueryResult `json:"results"`
 }
 
-// osvQueryResult is the result for a single query
+// osvQueryResult is the result for a single query (batch only returns id+modified)
 type osvQueryResult struct {
-	Vulns []osvVuln `json:"vulns"`
+	Vulns []osvBatchVuln `json:"vulns"`
+}
+
+// osvBatchVuln is a minimal vuln entry from the batch query
+type osvBatchVuln struct {
+	ID       string `json:"id"`
+	Modified string `json:"modified"`
 }
 
 // osvVuln is a vulnerability from OSV
 type osvVuln struct {
-	ID       string        `json:"id"`
-	Summary  string        `json:"summary"`
-	Details  string        `json:"details"`
-	Aliases  []string      `json:"aliases"`
-	Database *osvDB        `json:"database"`
-	Severity []osvSeverity `json:"severity"`
-	Fixed    string        `json:"fixed"`
-	Affected []osvAffected `json:"affected"`
+	ID               string            `json:"id"`
+	Summary          string            `json:"summary"`
+	Details          string            `json:"details"`
+	Aliases          []string          `json:"aliases"`
+	Database         *osvDB            `json:"database"`
+	Severity         []osvSeverity     `json:"severity"`
+	Affected         []osvAffected     `json:"affected"`
+	DatabaseSpecific map[string]any    `json:"database_specific"`
 }
 
 // osvDB identifies the database source
@@ -105,7 +114,8 @@ type osvSeverity struct {
 
 // osvAffected represents affected versions info
 type osvAffected struct {
-	Ranges []osvRange `json:"ranges"`
+	Ranges            []osvRange           `json:"ranges"`
+	EcosystemSpecific map[string]any       `json:"ecosystem_specific"`
 }
 
 // osvRange represents version ranges
@@ -126,9 +136,17 @@ func CheckVulnerabilities(ctx context.Context, deps []CheckInput) []CheckResult 
 		return nil
 	}
 
-	osvCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	osvCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			Proxy: proxy.Proxy(),
+		},
+		Timeout: 30 * time.Second,
+	}
+
+	// Step 1: Batch query to get vulnerability IDs per dependency
 	var queries []osvQuery
 	for _, dep := range deps {
 		osvEcosystem, ok := ecosystemMapping[dep.Ecosystem]
@@ -155,14 +173,7 @@ func CheckVulnerabilities(ctx context.Context, deps []CheckInput) []CheckResult 
 		return nil
 	}
 
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			Proxy: proxy.Proxy(),
-		},
-		Timeout: 30 * time.Second,
-	}
-
-	req, err := http.NewRequestWithContext(osvCtx, http.MethodPost, osvQueryEndpoint, bytes.NewReader(bodyBytes))
+	req, err := http.NewRequestWithContext(osvCtx, http.MethodPost, osvQueryBatchEndpoint, bytes.NewReader(bodyBytes))
 	if err != nil {
 		log.Error("OSV request creation error: %v", err)
 		return nil
@@ -188,18 +199,57 @@ func CheckVulnerabilities(ctx context.Context, deps []CheckInput) []CheckResult 
 		return nil
 	}
 
-	results := make([]CheckResult, 0, len(osvResp.Results))
+	// Collect all unique vuln IDs and map them to dependency indices
+	vulnIDToDepIndices := make(map[string][]int) // vuln ID -> which deps reference it
+	depVulnIDs := make([][]string, len(deps))    // vuln IDs per dep index
 	for i, result := range osvResp.Results {
-		if len(result.Vulns) == 0 {
-			continue
-		}
 		if i >= len(deps) {
 			break
 		}
-		dep := deps[i]
-		var vulns []VulnerabilityInfo
 		for _, v := range result.Vulns {
-			vulns = append(vulns, osvVulnToInfo(v))
+			depVulnIDs[i] = append(depVulnIDs[i], v.ID)
+			vulnIDToDepIndices[v.ID] = append(vulnIDToDepIndices[v.ID], i)
+		}
+	}
+
+	// Step 2: Fetch full details for each unique vuln ID
+	uniqueVulnIDs := make(map[string]struct{})
+	for _, ids := range depVulnIDs {
+		for _, id := range ids {
+			uniqueVulnIDs[id] = struct{}{}
+		}
+	}
+
+	fullVulns := make(map[string]osvVuln, len(uniqueVulnIDs))
+	for vulnID := range uniqueVulnIDs {
+		fullVuln, err := fetchOSVVuln(osvCtx, httpClient, vulnID)
+		if err != nil {
+			log.Warn("Failed to fetch OSV vuln %s: %v", vulnID, err)
+			continue
+		}
+		fullVulns[vulnID] = fullVuln
+	}
+
+	// Step 3: Build results using full vuln data
+	results := make([]CheckResult, 0, len(deps))
+	for i, dep := range deps {
+		vulnIDs := depVulnIDs[i]
+		if len(vulnIDs) == 0 {
+			continue
+		}
+		var vulns []VulnerabilityInfo
+		for _, id := range vulnIDs {
+			if v, ok := fullVulns[id]; ok {
+				vulns = append(vulns, osvVulnToInfo(v))
+			} else {
+				// Fallback: use minimal info from batch query
+				vulns = append(vulns, VulnerabilityInfo{
+					SourceID: id,
+					SourceURL: fmt.Sprintf("https://github.com/advisories/%s", id),
+					Severity: "UNKNOWN",
+					Title:    id,
+				})
+			}
 		}
 		results = append(results, CheckResult{
 			DependencyName:    dep.Name,
@@ -211,6 +261,34 @@ func CheckVulnerabilities(ctx context.Context, deps []CheckInput) []CheckResult 
 	}
 
 	return results
+}
+
+// fetchOSVVuln fetches full vulnerability details from GET /v1/vulns/{id}
+func fetchOSVVuln(ctx context.Context, httpClient *http.Client, vulnID string) (osvVuln, error) {
+	var v osvVuln
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, osvVulnEndpoint+vulnID, nil)
+	if err != nil {
+		return v, err
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return v, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return v, fmt.Errorf("OSV API returned status %d for vuln %s", resp.StatusCode, vulnID)
+	}
+
+	respBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return v, err
+	}
+
+	err = json.Unmarshal(respBytes, &v)
+	return v, err
 }
 
 func osvVulnToInfo(v osvVuln) VulnerabilityInfo {
@@ -230,7 +308,7 @@ func osvVulnToInfo(v osvVuln) VulnerabilityInfo {
 		sourceURL = fmt.Sprintf("https://github.com/advisories/%s", v.ID)
 	}
 
-	severity := parseOSVSeverity(v.Severity)
+	severity := parseOSVSeverity(v)
 
 	fixedVersion := extractFixedVersion(v.Affected)
 
@@ -243,33 +321,145 @@ func osvVulnToInfo(v osvVuln) VulnerabilityInfo {
 	}
 }
 
-func parseOSVSeverity(severities []osvSeverity) string {
-	for _, s := range severities {
-		if s.Type == "CVSS_V3" {
-			return cvssToSeverity(s.Score)
+func parseOSVSeverity(v osvVuln) string {
+	// 1. Check ecosystem_specific.severity from affected entries (simple string like "HIGH", "MEDIUM")
+	for _, a := range v.Affected {
+		if a.EcosystemSpecific != nil {
+			if sev, ok := a.EcosystemSpecific["severity"]; ok {
+				if s, ok := sev.(string); ok {
+					if mapped := mapSeverityString(s); mapped != "" {
+						return mapped
+					}
+				}
+			}
 		}
 	}
-	// Also check aliases for CVE-based severity lookup
+
+	// 2. Check database_specific.severity (GitHub uses "MODERATE" for "MEDIUM")
+	if v.DatabaseSpecific != nil {
+		if sev, ok := v.DatabaseSpecific["severity"]; ok {
+			if s, ok := sev.(string); ok {
+				if mapped := mapSeverityString(s); mapped != "" {
+					return mapped
+				}
+			}
+		}
+	}
+
+	// 3. Parse CVSS vector strings from top-level severity array
+	for _, s := range v.Severity {
+		if s.Type == "CVSS_V3" || s.Type == "CVSS_V4" {
+			if sev := parseCVSSVector(s.Score); sev != "UNKNOWN" {
+				return sev
+			}
+		}
+	}
+
+	// 4. Parse CVSS v2 vectors
+	for _, s := range v.Severity {
+		if s.Type == "CVSS_V2" {
+			if sev := parseCVSSVector(s.Score); sev != "UNKNOWN" {
+				return sev
+			}
+		}
+	}
+
 	return "UNKNOWN"
 }
 
-func cvssToSeverity(score string) string {
-	var f float64
-	if _, err := fmt.Sscanf(score, "%f", &f); err != nil {
-		return "UNKNOWN"
-	}
-	switch {
-	case f >= 9.0:
-		return "CRITICAL"
-	case f >= 7.0:
-		return "HIGH"
-	case f >= 4.0:
+// mapSeverityString maps various severity strings to standard CRITICAL/HIGH/MEDIUM/LOW
+func mapSeverityString(s string) string {
+	switch strings.ToUpper(s) {
+	case "CRITICAL", "HIGH":
+		return strings.ToUpper(s)
+	case "MODERATE", "MEDIUM":
 		return "MEDIUM"
-	case f > 0:
+	case "LOW":
 		return "LOW"
-	default:
+	case "NONE":
+		return "LOW"
+	}
+	return ""
+}
+
+// parseCVSSVector extracts severity from a CVSS vector string like "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:N/A:N"
+func parseCVSSVector(vector string) string {
+	vector = strings.TrimSpace(vector)
+	if vector == "" {
 		return "UNKNOWN"
 	}
+
+	// Extract CIA impact values from the vector (last 3 components)
+	// Format: .../C:{N,L,H}/I:{N,L,H}/A:{N,L,H}
+	parts := strings.Split(vector, "/")
+	ciaValues := make(map[string]string)
+	hasScope := false
+	scopeChanged := false
+
+	for _, part := range parts {
+		kv := strings.SplitN(part, ":", 2)
+		if len(kv) != 2 {
+			continue
+		}
+		key, val := kv[0], kv[1]
+		switch key {
+		case "S":
+			hasScope = true
+			scopeChanged = strings.EqualFold(val, "C")
+		case "C":
+			ciaValues["C"] = strings.ToUpper(val)
+		case "I":
+			ciaValues["I"] = strings.ToUpper(val)
+		case "A":
+			ciaValues["A"] = strings.ToUpper(val)
+		}
+	}
+
+	c := ciaValues["C"]
+	i := ciaValues["I"]
+	a := ciaValues["A"]
+
+	if c == "" && i == "" && a == "" {
+		return "UNKNOWN"
+	}
+
+	// Heuristic based on CVSS v3 specification:
+	// Scope Changed + any High impact → CRITICAL
+	// Scope Changed + any Low impact → HIGH
+	// Scope Unchanged + any High impact → HIGH
+	// Scope Unchanged + any Low impact → MEDIUM
+	// All None → LOW
+	hasHigh := c == "H" || i == "H" || a == "H"
+	hasLow := c == "L" || i == "L" || a == "L"
+
+	if hasScope {
+		if scopeChanged {
+			if hasHigh {
+				return "CRITICAL"
+			}
+			if hasLow {
+				return "HIGH"
+			}
+			return "MEDIUM"
+		}
+		// Scope Unchanged
+		if hasHigh {
+			return "HIGH"
+		}
+		if hasLow {
+			return "MEDIUM"
+		}
+		return "LOW"
+	}
+
+	// No scope info (CVSS v2 or unknown)
+	if hasHigh {
+		return "HIGH"
+	}
+	if hasLow {
+		return "MEDIUM"
+	}
+	return "LOW"
 }
 
 func extractFixedVersion(affected []osvAffected) string {

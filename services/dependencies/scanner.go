@@ -18,7 +18,7 @@ import (
 	"code.gitea.io/gitea/modules/setting"
 )
 
-func scan(ctx context.Context, repoID int64) error {
+func ScanRepository(ctx context.Context, repoID int64) error {
 	repo, err := repo_model.GetRepositoryByID(ctx, repoID)
 	if repo_model.IsErrRepoNotExist(err) {
 		return deps_model.DeleteDependenciesByRepo(ctx, repoID)

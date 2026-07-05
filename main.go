@@ -26,8 +26,8 @@ import (
 
 // these flags will be set by the build flags
 var (
-	Version = "1.26.5 (WizGITters)" // program version for this build
-	Tags    = ""            // the Golang build tags
+	Version = "1.26.6" // program version for this build
+	Tags    = ""       // the Golang build tags
 )
 
 func init() {

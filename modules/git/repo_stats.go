@@ -58,7 +58,7 @@ func (repo *Repository) GetCodeActivityStats(fromTime time.Time, branch string) 
 	if len(branch) == 0 {
 		gitCmd.AddArguments("--branches=*")
 	} else {
-		gitCmd.AddArguments("--first-parent").AddDynamicArguments(branch)
+		gitCmd.AddDynamicArguments(branch)
 	}
 
 	stdoutReader, stdoutReaderClose := gitCmd.MakeStdoutPipe()
