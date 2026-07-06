@@ -4,6 +4,7 @@
 	<div class="ui container">
 		<h2 class="ui header">
 			{{ctx.Locale.Tr "repo.dashboard"}}
+			<span class="ui small grey text tw-text-sm tw-font-normal">{{$.DashboardPeriodNotice}}</span>
 		</h2>
 
 		{{/* Overview Stats */}}
@@ -84,7 +85,7 @@
 		</h4>
 		<div class="ui attached segment">
 			<div class="ui list tw-space-y-2">
-				{{range .Activity.PublishedReleases}}
+				{{range .ReleasesPageList}}
 				<div class="item">
 					<span class="ui green label">{{ctx.Locale.Tr "repo.activity.published_release_label"}}</span>
 					{{.TagName}}
@@ -95,6 +96,7 @@
 				</div>
 				{{end}}
 			</div>
+			{{template "base/paginate" dict "Page" $.ReleasesPaginator "Link" $.Link}}
 		</div>
 		{{end}}
 
@@ -106,7 +108,7 @@
 		</h4>
 		<div class="ui attached segment">
 			<div class="ui list tw-space-y-2">
-				{{range .Activity.MergedPRs}}
+				{{range .MergedPRsPageList}}
 				<div class="item">
 					<span class="ui purple label">{{ctx.Locale.Tr "repo.activity.merged_prs_label"}}</span>
 					#{{.Index}} <a href="{{$.RepoLink}}/pulls/{{.Index}}">{{.Issue.Title | ctx.RenderUtils.RenderIssueSimpleTitle}}</a>
@@ -114,6 +116,7 @@
 				</div>
 				{{end}}
 			</div>
+			{{template "base/paginate" dict "Page" $.MergedPRsPaginator "Link" $.Link}}
 		</div>
 		{{end}}
 
@@ -125,7 +128,7 @@
 		</h4>
 		<div class="ui attached segment">
 			<div class="ui list tw-space-y-2">
-				{{range .Activity.OpenedPRs}}
+				{{range .OpenedPRsPageList}}
 				<div class="item">
 					<span class="ui green label">{{ctx.Locale.Tr "repo.activity.opened_prs_label"}}</span>
 					#{{.Index}} <a href="{{$.RepoLink}}/pulls/{{.Index}}">{{.Issue.Title | ctx.RenderUtils.RenderIssueSimpleTitle}}</a>
@@ -133,6 +136,7 @@
 				</div>
 				{{end}}
 			</div>
+			{{template "base/paginate" dict "Page" $.OpenedPRsPaginator "Link" $.Link}}
 		</div>
 		{{end}}
 
@@ -144,7 +148,7 @@
 		</h4>
 		<div class="ui attached segment">
 			<div class="ui list tw-space-y-2">
-				{{range .Activity.ClosedIssues}}
+				{{range .ClosedIssuesPageList}}
 				<div class="item">
 					<span class="ui red label">{{ctx.Locale.Tr "repo.activity.closed_issue_label"}}</span>
 					#{{.Index}} <a href="{{$.RepoLink}}/issues/{{.Index}}">{{.Title | ctx.RenderUtils.RenderIssueSimpleTitle}}</a>
@@ -152,6 +156,7 @@
 				</div>
 				{{end}}
 			</div>
+			{{template "base/paginate" dict "Page" $.ClosedIssuesPaginator "Link" $.Link}}
 		</div>
 		{{end}}
 
@@ -163,7 +168,7 @@
 		</h4>
 		<div class="ui attached segment">
 			<div class="ui list tw-space-y-2">
-				{{range .Activity.OpenedIssues}}
+				{{range .OpenedIssuesPageList}}
 				<div class="item">
 					<span class="ui green label">{{ctx.Locale.Tr "repo.activity.new_issue_label"}}</span>
 					#{{.Index}} <a href="{{$.RepoLink}}/issues/{{.Index}}">{{.Title | ctx.RenderUtils.RenderIssueSimpleTitle}}</a>
@@ -171,6 +176,7 @@
 				</div>
 				{{end}}
 			</div>
+			{{template "base/paginate" dict "Page" $.OpenedIssuesPaginator "Link" $.Link}}
 		</div>
 		{{end}}
 	</div>

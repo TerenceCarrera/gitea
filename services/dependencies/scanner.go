@@ -72,6 +72,35 @@ func ScanRepository(ctx context.Context, repoID int64) error {
 		detectableSet[strings.ToLower(f)] = true
 	}
 
+	// Lock files contain exact installed versions, which are preferred over
+	// the constraint strings found in manifest files (e.g. ^12.0 vs 12.1.0).
+	// Pre-scan entries to find lock files, then skip their corresponding manifests.
+	lockFileEcosystems := map[string]string{
+		"composer.lock":     "composer",
+		"package-lock.json": "npm",
+		"pnpm-lock.yaml":    "npm",
+		"yarn.lock":         "npm",
+		"go.sum":            "go",
+		"Cargo.lock":        "cargo",
+		"Gemfile.lock":      "rubygems",
+		"pubspec.lock":      "pub",
+		"mix.lock":          "mix",
+		"gradle.lockfile":   "maven",
+		"paket.lock":        "nuget",
+		"Pipfile.lock":      "pip",
+		"Podfile.lock":      "cocoapods",
+	}
+	ecosystemsCoveredByLock := make(map[string]bool)
+	for _, entry := range entries {
+		if entry.IsDir() || entry.IsSubModule() {
+			continue
+		}
+		base := strings.ToLower(filepath.Base(entry.Name()))
+		if eco, ok := lockFileEcosystems[base]; ok {
+			ecosystemsCoveredByLock[eco] = true
+		}
+	}
+
 	var allDeps []deps_model.Dependency
 
 	for _, entry := range entries {
@@ -83,6 +112,12 @@ func ScanRepository(ctx context.Context, repoID int64) error {
 		base := strings.ToLower(filepath.Base(path))
 
 		if !detectableSet[base] {
+			continue
+		}
+
+		// Skip manifest files if a lock file for the same ecosystem exists
+		ecosystem := detectEcosystem(path)
+		if ecosystemsCoveredByLock[ecosystem] && lockFileEcosystems[base] == "" {
 			continue
 		}
 
@@ -100,8 +135,6 @@ func ScanRepository(ctx context.Context, repoID int64) error {
 					log.Debug("Failed to parse %s in repo %d: %v", path, repoID, err)
 					continue
 				}
-
-				ecosystem := detectEcosystem(path)
 
 				for _, dep := range parsedDeps {
 					allDeps = append(allDeps, deps_model.Dependency{

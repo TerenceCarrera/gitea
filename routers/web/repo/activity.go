@@ -66,6 +66,7 @@ func Activity(ctx *context.Context) {
 		ctx.Repo.CanRead(unit.TypeIssues),
 		ctx.Repo.CanRead(unit.TypePullRequests),
 		canReadCode,
+		0, 0, 0, 0, 0, 0,
 	)
 	if err != nil {
 		ctx.ServerError("GetActivityStats", err)

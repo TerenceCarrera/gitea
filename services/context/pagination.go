@@ -18,8 +18,9 @@ import (
 
 // Pagination provides a pagination via paginator.Paginator and additional configurations for the link params used in rendering
 type Pagination struct {
-	Paginater *paginator.Paginator
-	urlParams []string
+	Paginater     *paginator.Paginator
+	PageParamName string
+	urlParams     []string
 }
 
 // NewPagination creates a new instance of the Pagination struct.
@@ -40,7 +41,7 @@ func (p *Pagination) WithCurRows(n int) *Pagination {
 
 func (p *Pagination) AddParamFromQuery(q url.Values) {
 	for key, values := range q {
-		if key == "page" || len(values) == 0 || (len(values) == 1 && values[0] == "") {
+		if key == "page" || key == p.PageParamName || len(values) == 0 || (len(values) == 1 && values[0] == "") {
 			continue
 		}
 		for _, value := range values {
@@ -65,4 +66,12 @@ func (p *Pagination) RemoveParam(keys container.Set[string]) {
 // GetParams returns the configured URL params
 func (p *Pagination) GetParams() template.URL {
 	return template.URL(strings.Join(p.urlParams, "&"))
+}
+
+// GetPageParam returns the page parameter name, defaulting to "page" if empty
+func (p *Pagination) GetPageParam() string {
+	if p.PageParamName != "" {
+		return p.PageParamName
+	}
+	return "page"
 }
